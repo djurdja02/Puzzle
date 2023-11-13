@@ -72,9 +72,9 @@ class BestFirstAlgorithm(Algorithm):
                 tmp = self.apply_action(state, action)
                 if tmp not in actions:
                     actions[tmp] = solution_actions.copy() + [action]
-                    next_states.append(tmp)
-            next_states = sorted(next_states, key=lambda s: (self.heuristic.get_evaluation(s), self.id(s)))
-            state = next_states.pop(0)
+                    next_states.append((tmp, self.heuristic.get_evaluation(tmp)))
+            next_states = sorted(next_states, key=lambda s: (s[1], self.id(s[0])))
+            state = next_states.pop(0)[0]
             solution_actions = actions[state].copy()
         return solution_actions
 
@@ -82,9 +82,6 @@ class BestFirstAlgorithm(Algorithm):
 class AStarAlgorithm(Algorithm):
     def ident(self, state):
         return tuple(state)
-
-    def identPath(self, path):
-        return tuple(map(tuple, path))
 
     def cost(self,path):
         return self.heuristic.get_evaluation(path[-1])+len(path)
@@ -95,27 +92,19 @@ class AStarAlgorithm(Algorithm):
         solution_actions = []
         next_paths = []
         actions = dict()
-        #dinamicko programiranje
-        visited_nodes = []
-        actions[self.identPath(state_path)] = solution_actions
         while state != goal_state:
-            visited_nodes.append(state)
             legal_actions = self.get_legal_actions(state)
             for action in legal_actions:
-                tmp = self.apply_action(state,action)
-                if tmp in visited_nodes:
-                    continue
+                tmp = self.apply_action(state, action)
                 tmp_path = state_path.copy()
                 tmp_path.append(tmp)
-                tmp_ident = self.identPath(tmp_path)
-                if tmp_ident not in actions:
-                    actions[tmp_ident] = solution_actions.copy()+[action]
-                    next_paths.append(tmp_path)
-            next_paths = sorted(next_paths, key=lambda s: (self.cost(s), self.ident(s[-1])))
-            state_path = next_paths[0]
+                if tmp not in actions:
+                    actions[tmp] = solution_actions.copy()+[action]
+                    next_paths.append((tmp_path, self.cost(tmp_path), self.ident(tmp)))
+            next_paths = sorted(next_paths, key=lambda s: (s[1], s[2]))
+            state_path = next_paths.pop(0)[0]
             state = state_path[-1]
-            next_paths = next_paths[1:]
-            solution_actions = actions[self.identPath(state_path)].copy()
+            solution_actions = actions[state]
         return solution_actions
 
 
